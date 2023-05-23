@@ -1,5 +1,9 @@
 package telsh
 
+import (
+	telnet "github.com/p12s/fake-device"
+)
+
 // A Producer provides a Produce method which creates a Handler.
 //
 // Producer is an abstraction that represents a shell "command".

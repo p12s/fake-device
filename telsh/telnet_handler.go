@@ -2,6 +2,7 @@ package telsh
 
 import (
 	"bytes"
+	telnet "github.com/p12s/fake-device"
 	"io"
 	"strings"
 	"sync"
