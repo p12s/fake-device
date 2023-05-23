@@ -3,6 +3,7 @@ package telsh
 import (
 	"bytes"
 	telnet "github.com/p12s/fake-device"
+	oi "github.com/reiver/go-oi"
 	"io"
 	"strings"
 	"sync"
