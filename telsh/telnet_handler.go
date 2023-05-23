@@ -180,8 +180,6 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 				telnetHandler.login = strings.TrimSpace(lineString) // положить в логин, если надо
 				line.Reset()
 				state = STATE_WAIT_PASSWORD
-				fmt.Printf("login: `%s`\n", telnetHandler.login)
-				// запросить пароль
 				// ask password
 				if _, err := oi.LongWrite(writer, []byte(defaultAskPassword)); nil != err {
 					logger.Errorf("Ask password writing prompt: %v", err)
@@ -192,10 +190,14 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 			case STATE_WAIT_PASSWORD:
 				telnetHandler.password = strings.TrimSpace(lineString)
 				line.Reset()
-				fmt.Printf("pass: `%s`\n", telnetHandler.password)
 				if telnetHandler.login == defaultLogin && telnetHandler.password == defaultPassword {
 					fmt.Printf("success login\n")
 					state = STATE_WAIT_COMMAND
+					if _, err := oi.LongWrite(writer, promptBytes); nil != err {
+						logger.Errorf("Problem long writing prompt: %v", err)
+						return
+					}
+					logger.Debugf("Wrote prompt: %q.", promptBytes)
 				} else {
 					fmt.Printf("login fail: login: `%s`, pass: `%s`\n", telnetHandler.login, telnetHandler.password)
 					telnetHandler.login = ""
