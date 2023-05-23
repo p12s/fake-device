@@ -20,15 +20,15 @@ func TestServeTELNETCommandNotFound(t *testing.T) {
 
 		{
 			ClientSends: "apple\r\n",
-			Expected:    "apple: command not found\r\n",
+			Expected:    "apple: command not found :(\r\n",
 		},
 		{
 			ClientSends: "banana\r\n",
-			Expected:    "banana: command not found\r\n",
+			Expected:    "banana: command not found :(\r\n",
 		},
 		{
 			ClientSends: "cherry\r\n",
-			Expected:    "cherry: command not found\r\n",
+			Expected:    "cherry: command not found :(\r\n",
 		},
 
 		{
@@ -68,7 +68,7 @@ func TestServeTELNETCommandNotFound(t *testing.T) {
 
 		{
 			ClientSends: "ls -alF\r\n",
-			Expected:    "ls: command not found\r\n",
+			Expected:    "ls: command not found :(\r\n",
 		},
 	}
 

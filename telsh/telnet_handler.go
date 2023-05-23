@@ -111,7 +111,7 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 		logger = internalDiscardLogger{}
 	}
 
-	colonSpaceCommandNotFoundEL := []byte(": command not found\r\n")
+	colonSpaceCommandNotFoundEL := []byte(": command not found :(\r\n")
 
 	var prompt bytes.Buffer
 	var exitCommandName string
