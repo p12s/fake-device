@@ -2,6 +2,7 @@ package telsh
 
 import (
 	"bytes"
+	"fmt"
 	telnet "github.com/p12s/fake-device"
 	oi "github.com/reiver/go-oi"
 	"io"
@@ -15,8 +16,10 @@ const (
 	defaultWelcomeMessage  = "\r\nWelcome!\r\n"
 	defaultExitMessage     = "\r\nGoodbye!\r\n"
 
-	defaultLogin    = "login"
-	defaultPassword = "pass"
+	defaultAskLogin    = "\nUser: "
+	defaultLogin       = "login"
+	defaultAskPassword = "\nPassword: "
+	defaultPassword    = "pass"
 )
 
 type ShellHandler struct {
@@ -30,10 +33,13 @@ type ShellHandler struct {
 	ExitMessage     string
 
 	// пока как будто польз один на весь сервер
-	IsLoginSend    bool
-	IsLoginOk      bool
-	IsPasswordSend bool
-	IsPasswordOk   bool
+	IsLoginAsk bool
+	login      string
+	IsLoginOk  bool
+
+	IsPasswordAsk bool
+	password      string
+	IsPasswordOk  bool
 }
 
 func NewShellHandler() *ShellHandler {
@@ -131,11 +137,23 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 		return
 	}
 	logger.Debugf("Wrote welcome message: %q.", welcomeMessage)
-	if _, err := oi.LongWrite(writer, promptBytes); nil != err {
-		logger.Errorf("Problem long writing prompt: %v", err)
-		return
+
+	// prompt - рано, сначала логин/пароль
+	//if _, err := oi.LongWrite(writer, promptBytes); nil != err {
+	//	logger.Errorf("Problem long writing prompt: %v", err)
+	//	return
+	//}
+	//logger.Debugf("Wrote prompt: %q.", promptBytes)
+
+	// ask login
+	if !telnetHandler.IsLoginAsk {
+		if _, err := oi.LongWrite(writer, []byte(defaultAskLogin)); nil != err {
+			logger.Errorf("Ask login writing prompt: %v", err)
+			return
+		}
+		logger.Debugf("Wrote ask login: %q.", []byte(defaultAskLogin))
+		telnetHandler.IsLoginAsk = true
 	}
-	logger.Debugf("Wrote prompt: %q.", promptBytes)
 
 	var buffer [1]byte // Seems like the length of the buffer needs to be small, otherwise will have to wait for buffer to fill up.
 	p := buffer[:]
@@ -157,6 +175,13 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 		if '\n' == p[0] {
 			lineString := line.String()
 
+			fmt.Printf("lineString: `%s`\n", lineString)
+			// проверить что прилетает строка логина
+			// положить в логин, если надо
+			// запросить пароль
+			// положить в пароль
+			// сравнить и либо  на 2 круг, либо в свободный режим
+
 			if "\r\n" == lineString {
 				line.Reset()
 				if _, err := oi.LongWrite(writer, promptBytes); nil != err {
@@ -164,6 +189,16 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 				}
 				continue
 			}
+
+			// ask password
+			//if !telnetHandler.IsPasswordAsk {
+			//	if _, err := oi.LongWrite(writer, []byte(defaultAskPassword)); nil != err {
+			//		logger.Errorf("Ask password writing prompt: %v", err)
+			//		return
+			//	}
+			//	logger.Debugf("Wrote ask password: %q.", []byte(defaultAskPassword))
+			//	telnetHandler.IsPasswordAsk = true
+			//}
 
 			//@TODO: support piping.
 			fields := strings.Fields(lineString)
