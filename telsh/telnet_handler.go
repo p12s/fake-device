@@ -20,6 +20,10 @@ const (
 	defaultLogin       = "login"
 	defaultAskPassword = "\nPassword: "
 	defaultPassword    = "pass"
+
+	STATE_WAIT_LOGIN    = 10
+	STATE_WAIT_PASSWORD = 20
+	STATE_WAIT_COMMAND  = 30
 )
 
 type ShellHandler struct {
@@ -33,13 +37,8 @@ type ShellHandler struct {
 	ExitMessage     string
 
 	// пока как будто польз один на весь сервер
-	IsLoginAsk bool
-	login      string
-	IsLoginOk  bool
-
-	IsPasswordAsk bool
-	password      string
-	IsPasswordOk  bool
+	login    string
+	password string
 }
 
 func NewShellHandler() *ShellHandler {
@@ -146,7 +145,8 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 	//logger.Debugf("Wrote prompt: %q.", promptBytes)
 
 	// ask login
-	if !telnetHandler.IsLoginAsk {
+	state := STATE_WAIT_LOGIN
+	if telnetHandler.login == "" {
 		if _, err := oi.LongWrite(writer, []byte(defaultAskLogin)); nil != err {
 			logger.Errorf("Ask login writing prompt: %v", err)
 			return
@@ -175,10 +175,37 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 		if '\n' == p[0] {
 			lineString := line.String()
 
-			fmt.Printf("lineString: `%s`\n", lineString)
-			// проверить что прилетает строка логина
-			// положить в логин, если надо
-			// запросить пароль
+			switch state {
+			case STATE_WAIT_LOGIN: // проверить что прилетает строка логина
+				telnetHandler.login = strings.TrimSpace(lineString) // положить в логин, если надо
+				state = STATE_WAIT_PASSWORD
+				fmt.Printf("login: `%s`\n", telnetHandler.login)
+				// запросить пароль
+				// ask password
+				if telnetHandler.password == "" {
+					if _, err := oi.LongWrite(writer, []byte(defaultAskPassword)); nil != err {
+						logger.Errorf("Ask password writing prompt: %v", err)
+						return
+					}
+					logger.Debugf("Wrote ask password: %q.", []byte(defaultAskPassword))
+				}
+				continue
+			case STATE_WAIT_PASSWORD:
+				telnetHandler.password = strings.TrimSpace(lineString)
+				if telnetHandler.login == defaultLogin && telnetHandler.password == defaultPassword {
+					fmt.Printf("success login\n")
+					state = STATE_WAIT_COMMAND
+				} else {
+					fmt.Printf("login fail:\n")
+					telnetHandler.login = ""
+					telnetHandler.password = ""
+					state = STATE_WAIT_LOGIN
+				}
+				continue
+			case STATE_WAIT_COMMAND:
+				fmt.Printf("do command:\n")
+			}
+
 			// положить в пароль
 			// сравнить и либо  на 2 круг, либо в свободный режим
 
@@ -189,16 +216,6 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 				}
 				continue
 			}
-
-			// ask password
-			//if !telnetHandler.IsPasswordAsk {
-			//	if _, err := oi.LongWrite(writer, []byte(defaultAskPassword)); nil != err {
-			//		logger.Errorf("Ask password writing prompt: %v", err)
-			//		return
-			//	}
-			//	logger.Debugf("Wrote ask password: %q.", []byte(defaultAskPassword))
-			//	telnetHandler.IsPasswordAsk = true
-			//}
 
 			//@TODO: support piping.
 			fields := strings.Fields(lineString)
