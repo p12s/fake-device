@@ -152,7 +152,6 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 			return
 		}
 		logger.Debugf("Wrote ask login: %q.", []byte(defaultAskLogin))
-		telnetHandler.IsLoginAsk = true
 	}
 
 	var buffer [1]byte // Seems like the length of the buffer needs to be small, otherwise will have to wait for buffer to fill up.
