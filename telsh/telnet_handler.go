@@ -16,14 +16,15 @@ const (
 	defaultWelcomeMessage  = "\r\nWelcome!\r\n"
 	defaultExitMessage     = "\r\nGoodbye!\r\n"
 
-	defaultAskLogin    = "\nUser: "
-	defaultLogin       = "login"
-	defaultAskPassword = "\nPassword: "
-	defaultPassword    = "pass"
+	defaultAskLogin    = "User: "
+	defaultLogin       = "admin"
+	defaultAskPassword = "Password: "
+	defaultPassword    = "admin"
 
-	STATE_WAIT_LOGIN    = 10
+	STATE_WAIT_LOGIN    = 10 // delete WAIT
 	STATE_WAIT_PASSWORD = 20
-	STATE_WAIT_COMMAND  = 30
+	STATE_WAIT_AUTH     = 30
+	STATE_WAIT_COMMAND  = 40
 )
 
 type ShellHandler struct {
@@ -199,6 +200,13 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 					telnetHandler.login = ""
 					telnetHandler.password = ""
 					state = STATE_WAIT_LOGIN
+					if telnetHandler.login == "" {
+						if _, err := oi.LongWrite(writer, []byte(defaultAskLogin)); nil != err {
+							logger.Errorf("Ask login writing prompt: %v", err)
+							return
+						}
+						logger.Debugf("Wrote ask login: %q.", []byte(defaultAskLogin))
+					}
 				}
 				continue
 			case STATE_WAIT_COMMAND:
