@@ -2,6 +2,7 @@ package telsh
 
 import (
 	telnet "github.com/p12s/fake-device"
+	oi "github.com/reiver/go-oi"
 	"io"
 	"sort"
 )
