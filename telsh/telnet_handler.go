@@ -26,6 +26,17 @@ const (
 	STATE_WAIT_COMMAND  = 30
 )
 
+// для нескольких одновременных соединений
+// поймать коннект, взять уникальный ид, проверить что его еще нет
+// если есть - отметить флаг повторного запроса
+// нет - положить в контекст и отправить дальше
+type auth struct {
+	login    string
+	password string
+	retry    int
+	state    int
+}
+
 type ShellHandler struct {
 	muxtex       sync.RWMutex
 	producers    map[string]Producer
@@ -36,7 +47,8 @@ type ShellHandler struct {
 	WelcomeMessage  string
 	ExitMessage     string
 
-	// пока как будто польз один на весь сервер
+	//connectMu  sync.RWMutex
+	//connectMap map[int]auth
 	login    string
 	password string
 	retry    int
@@ -45,36 +57,37 @@ type ShellHandler struct {
 func NewShellHandler() *ShellHandler {
 	producers := map[string]Producer{}
 
-	telnetHandler := ShellHandler{
+	h := ShellHandler{
 		producers: producers,
 
 		Prompt:          defaultPrompt,
 		ExitCommandName: defaultExitCommandName,
 		WelcomeMessage:  defaultWelcomeMessage,
 		ExitMessage:     defaultExitMessage,
+		//connectMap:      make(map[int]auth),
 	}
 
-	return &telnetHandler
+	return &h
 }
 
-func (telnetHandler *ShellHandler) Register(name string, producer Producer) error {
+func (h *ShellHandler) Register(name string, producer Producer) error {
 
-	telnetHandler.muxtex.Lock()
-	telnetHandler.producers[name] = producer
-	telnetHandler.muxtex.Unlock()
+	h.muxtex.Lock()
+	h.producers[name] = producer
+	h.muxtex.Unlock()
 
 	return nil
 }
 
-func (telnetHandler *ShellHandler) MustRegister(name string, producer Producer) *ShellHandler {
-	if err := telnetHandler.Register(name, producer); nil != err {
+func (h *ShellHandler) MustRegister(name string, producer Producer) *ShellHandler {
+	if err := h.Register(name, producer); nil != err {
 		panic(err)
 	}
 
-	return telnetHandler
+	return h
 }
 
-func (telnetHandler *ShellHandler) RegisterHandlerFunc(name string, handlerFunc HandlerFunc) error {
+func (h *ShellHandler) RegisterHandlerFunc(name string, handlerFunc HandlerFunc) error {
 
 	produce := func(ctx telnet.Context, name string, args ...string) Handler {
 		return PromoteHandlerFunc(handlerFunc, args...)
@@ -82,35 +95,35 @@ func (telnetHandler *ShellHandler) RegisterHandlerFunc(name string, handlerFunc 
 
 	producer := ProducerFunc(produce)
 
-	return telnetHandler.Register(name, producer)
+	return h.Register(name, producer)
 }
 
-func (telnetHandler *ShellHandler) MustRegisterHandlerFunc(name string, handlerFunc HandlerFunc) *ShellHandler {
-	if err := telnetHandler.RegisterHandlerFunc(name, handlerFunc); nil != err {
+func (h *ShellHandler) MustRegisterHandlerFunc(name string, handlerFunc HandlerFunc) *ShellHandler {
+	if err := h.RegisterHandlerFunc(name, handlerFunc); nil != err {
 		panic(err)
 	}
 
-	return telnetHandler
+	return h
 }
 
-func (telnetHandler *ShellHandler) RegisterElse(producer Producer) error {
+func (h *ShellHandler) RegisterElse(producer Producer) error {
 
-	telnetHandler.muxtex.Lock()
-	telnetHandler.elseProducer = producer
-	telnetHandler.muxtex.Unlock()
+	h.muxtex.Lock()
+	h.elseProducer = producer
+	h.muxtex.Unlock()
 
 	return nil
 }
 
-func (telnetHandler *ShellHandler) MustRegisterElse(producer Producer) *ShellHandler {
-	if err := telnetHandler.RegisterElse(producer); nil != err {
+func (h *ShellHandler) MustRegisterElse(producer Producer) *ShellHandler {
+	if err := h.RegisterElse(producer); nil != err {
 		panic(err)
 	}
 
-	return telnetHandler
+	return h
 }
 
-func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, reader telnet.Reader) {
+func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, reader telnet.Reader) {
 
 	logger := ctx.Logger()
 	if nil == logger {
@@ -124,13 +137,13 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 	var welcomeMessage string
 	var exitMessage string
 
-	prompt.WriteString(telnetHandler.Prompt)
+	prompt.WriteString(h.Prompt)
 
 	promptBytes := prompt.Bytes()
 
-	exitCommandName = telnetHandler.ExitCommandName
-	welcomeMessage = telnetHandler.WelcomeMessage
-	exitMessage = telnetHandler.ExitMessage
+	exitCommandName = h.ExitCommandName
+	welcomeMessage = h.WelcomeMessage
+	exitMessage = h.ExitMessage
 
 	if _, err := oi.LongWriteString(writer, welcomeMessage); nil != err {
 		logger.Errorf("Problem long writing welcome message: %v", err)
@@ -140,13 +153,11 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 
 	// ask login
 	state := STATE_WAIT_LOGIN
-	if telnetHandler.login == "" {
-		if _, err := oi.LongWrite(writer, []byte(defaultAskLogin)); nil != err {
-			logger.Errorf("Ask login writing prompt: %v", err)
-			return
-		}
-		logger.Debugf("Wrote ask login: %q.", []byte(defaultAskLogin))
+	if _, err := oi.LongWrite(writer, []byte(defaultAskLogin)); nil != err {
+		logger.Errorf("Ask login writing prompt: %v", err)
+		return
 	}
+	logger.Debugf("Wrote ask login: %q.", []byte(defaultAskLogin))
 
 	var buffer [1]byte // Seems like the length of the buffer needs to be small, otherwise will have to wait for buffer to fill up.
 	p := buffer[:]
@@ -170,7 +181,7 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 
 			switch state {
 			case STATE_WAIT_LOGIN: // проверить что прилетает строка логина
-				telnetHandler.login = strings.TrimSpace(lineString) // положить в логин, если надо
+				h.login = strings.TrimSpace(lineString) // положить в логин, если надо
 				line.Reset()
 				state = STATE_WAIT_PASSWORD
 				// ask password
@@ -181,9 +192,9 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 				logger.Debugf("Wrote ask password: %q.", []byte(defaultAskPassword))
 				continue
 			case STATE_WAIT_PASSWORD:
-				telnetHandler.password = strings.TrimSpace(lineString)
+				h.password = strings.TrimSpace(lineString)
 				line.Reset()
-				if telnetHandler.login == defaultLogin && telnetHandler.password == defaultPassword {
+				if h.login == defaultLogin && h.password == defaultPassword {
 					state = STATE_WAIT_COMMAND
 					if _, err := oi.LongWrite(writer, promptBytes); nil != err {
 						logger.Errorf("Problem long writing prompt: %v", err)
@@ -192,10 +203,8 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 					logger.Debugf("Wrote prompt: %q.", promptBytes)
 				} else {
 					// возможно понадобится читать кол-во попыток ввода логин/пасс
-					telnetHandler.login = ""
-					telnetHandler.password = ""
 					state = STATE_WAIT_LOGIN
-					if telnetHandler.login == "" {
+					if h.login == "" {
 						if _, err := oi.LongWrite(writer, []byte(defaultAskLogin)); nil != err {
 							logger.Errorf("Ask login writing prompt: %v", err)
 							return
@@ -203,7 +212,9 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 						logger.Debugf("Wrote ask login: %q.", []byte(defaultAskLogin))
 					}
 				}
-				telnetHandler.retry += 1
+				h.login = ""
+				h.password = ""
+				h.retry += 1
 				continue
 			}
 
@@ -236,15 +247,15 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 
 			var producer Producer
 
-			telnetHandler.muxtex.RLock()
+			h.muxtex.RLock()
 			var ok bool
-			producer, ok = telnetHandler.producers[field0]
-			telnetHandler.muxtex.RUnlock()
+			producer, ok = h.producers[field0]
+			h.muxtex.RUnlock()
 
 			if !ok {
-				telnetHandler.muxtex.RLock()
-				producer = telnetHandler.elseProducer
-				telnetHandler.muxtex.RUnlock()
+				h.muxtex.RLock()
+				producer = h.elseProducer
+				h.muxtex.RUnlock()
 			}
 
 			if nil == producer {
