@@ -2,7 +2,6 @@ package telsh
 
 import (
 	"bytes"
-	"fmt"
 	telnet "github.com/p12s/fake-device"
 	oi "github.com/reiver/go-oi"
 	"io"
@@ -20,11 +19,11 @@ const (
 	defaultLogin       = "admin"
 	defaultAskPassword = "Password: "
 	defaultPassword    = "admin"
+	defaultMaxRetry    = 3
 
 	STATE_WAIT_LOGIN    = 10 // delete WAIT
 	STATE_WAIT_PASSWORD = 20
-	STATE_WAIT_AUTH     = 30
-	STATE_WAIT_COMMAND  = 40
+	STATE_WAIT_COMMAND  = 30
 )
 
 type ShellHandler struct {
@@ -40,6 +39,7 @@ type ShellHandler struct {
 	// пока как будто польз один на весь сервер
 	login    string
 	password string
+	retry    int
 }
 
 func NewShellHandler() *ShellHandler {
@@ -138,13 +138,6 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 	}
 	logger.Debugf("Wrote welcome message: %q.", welcomeMessage)
 
-	// prompt - рано, сначала логин/пароль
-	//if _, err := oi.LongWrite(writer, promptBytes); nil != err {
-	//	logger.Errorf("Problem long writing prompt: %v", err)
-	//	return
-	//}
-	//logger.Debugf("Wrote prompt: %q.", promptBytes)
-
 	// ask login
 	state := STATE_WAIT_LOGIN
 	if telnetHandler.login == "" {
@@ -191,7 +184,6 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 				telnetHandler.password = strings.TrimSpace(lineString)
 				line.Reset()
 				if telnetHandler.login == defaultLogin && telnetHandler.password == defaultPassword {
-					fmt.Printf("success login\n")
 					state = STATE_WAIT_COMMAND
 					if _, err := oi.LongWrite(writer, promptBytes); nil != err {
 						logger.Errorf("Problem long writing prompt: %v", err)
@@ -199,7 +191,7 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 					}
 					logger.Debugf("Wrote prompt: %q.", promptBytes)
 				} else {
-					fmt.Printf("login fail: login: `%s`, pass: `%s`\n", telnetHandler.login, telnetHandler.password)
+					// возможно понадобится читать кол-во попыток ввода логин/пасс
 					telnetHandler.login = ""
 					telnetHandler.password = ""
 					state = STATE_WAIT_LOGIN
@@ -211,13 +203,9 @@ func (telnetHandler *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet
 						logger.Debugf("Wrote ask login: %q.", []byte(defaultAskLogin))
 					}
 				}
+				telnetHandler.retry += 1
 				continue
-			case STATE_WAIT_COMMAND:
-				fmt.Printf("do command:\n")
 			}
-
-			// положить в пароль
-			// сравнить и либо  на 2 круг, либо в свободный режим
 
 			if "\r\n" == lineString {
 				line.Reset()
