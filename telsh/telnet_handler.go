@@ -22,7 +22,7 @@ const (
 	defaultPassword             = "admin"
 	defaultMaxRetry             = 3
 	defaultLongInternalTimeout  = 60 * time.Second
-	defaultShortInternalTimeout = 200 * time.Millisecond
+	defaultShortInternalTimeout = 3 * time.Second
 
 	stateLogin          = 10
 	statePassword       = 20
@@ -53,6 +53,7 @@ type ShellHandler struct {
 	producers    map[string]Producer
 	elseProducer Producer
 
+	// settings
 	ExitCommandName string
 	Prompt          string
 	WelcomeMessage  string
@@ -63,8 +64,7 @@ type ShellHandler struct {
 	ImitateInternalLongResponse bool
 	ImitateLongCommandResponses bool
 
-	//connectMu  sync.RWMutex
-	//connectMap map[int]auth
+	// TODO make session store, device must support multiple concurrent connections (1 - wait login, 2 - command #453)
 	login    string
 	password string
 	retry    int
@@ -253,7 +253,7 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 			}
 
 			field0 := fields[0]
-			
+
 			switch field0 {
 			case exitCommandName:
 				oi.LongWriteString(writer, exitMessage)
