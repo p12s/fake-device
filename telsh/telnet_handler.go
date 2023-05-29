@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -15,15 +16,25 @@ const (
 	defaultWelcomeMessage  = "\r\nWelcome!\r\n"
 	defaultExitMessage     = "\r\nGoodbye!\r\n"
 
-	defaultAskLogin    = "User: "
-	defaultLogin       = "admin"
-	defaultAskPassword = "Password: "
-	defaultPassword    = "admin"
-	defaultMaxRetry    = 3
+	defaultAskLogin             = "User: "
+	defaultLogin                = "admin"
+	defaultAskPassword          = "Password: "
+	defaultPassword             = "admin"
+	defaultMaxRetry             = 3
+	defaultLongInternalTimeout  = 60 * time.Second
+	defaultShortInternalTimeout = 200 * time.Millisecond
 
-	STATE_WAIT_LOGIN    = 10 // delete WAIT
-	STATE_WAIT_PASSWORD = 20
-	STATE_WAIT_COMMAND  = 30
+	stateLogin          = 10
+	statePassword       = 20
+	stateCommandProcess = 30
+
+	// troubles management commands
+	startImitateBrakeConnectCommand  = "startImitateBrakeConnect"
+	stopImitateBrakeConnectCommand   = "stopImitateBrakeConnect"
+	startImitateInternalLongResponse = "startImitateInternalLongResponse"
+	stopImitateInternalLongResponse  = "stopImitateInternalLongResponse"
+	startImitateLongCommandResponses = "startImitateLongCommandResponses"
+	stopImitateLongCommandResponses  = "stopImitateLongCommandResponses"
 )
 
 // для нескольких одновременных соединений
@@ -46,6 +57,11 @@ type ShellHandler struct {
 	Prompt          string
 	WelcomeMessage  string
 	ExitMessage     string
+
+	// troubles imitation
+	ImitateBrakeConnect         bool
+	ImitateInternalLongResponse bool
+	ImitateLongCommandResponses bool
 
 	//connectMu  sync.RWMutex
 	//connectMap map[int]auth
@@ -152,7 +168,7 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 	logger.Debugf("Wrote welcome message: %q.", welcomeMessage)
 
 	// ask login
-	state := STATE_WAIT_LOGIN
+	state := stateLogin
 	if _, err := oi.LongWrite(writer, []byte(defaultAskLogin)); nil != err {
 		logger.Errorf("Ask login writing prompt: %v", err)
 		return
@@ -180,10 +196,10 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 			lineString := line.String()
 
 			switch state {
-			case STATE_WAIT_LOGIN: // проверить что прилетает строка логина
+			case stateLogin: // проверить что прилетает строка логина
 				h.login = strings.TrimSpace(lineString) // положить в логин, если надо
 				line.Reset()
-				state = STATE_WAIT_PASSWORD
+				state = statePassword
 				// ask password
 				if _, err := oi.LongWrite(writer, []byte(defaultAskPassword)); nil != err {
 					logger.Errorf("Ask password writing prompt: %v", err)
@@ -191,11 +207,11 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 				}
 				logger.Debugf("Wrote ask password: %q.", []byte(defaultAskPassword))
 				continue
-			case STATE_WAIT_PASSWORD:
+			case statePassword:
 				h.password = strings.TrimSpace(lineString)
 				line.Reset()
 				if h.login == defaultLogin && h.password == defaultPassword {
-					state = STATE_WAIT_COMMAND
+					state = stateCommandProcess
 					if _, err := oi.LongWrite(writer, promptBytes); nil != err {
 						logger.Errorf("Problem long writing prompt: %v", err)
 						return
@@ -203,7 +219,7 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 					logger.Debugf("Wrote prompt: %q.", promptBytes)
 				} else {
 					// возможно понадобится читать кол-во попыток ввода логин/пасс
-					state = STATE_WAIT_LOGIN
+					state = stateLogin
 					if _, err := oi.LongWrite(writer, []byte(defaultAskLogin)); nil != err {
 						logger.Errorf("Ask login writing prompt: %v", err)
 						return
@@ -237,10 +253,37 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 			}
 
 			field0 := fields[0]
-
-			if exitCommandName == field0 {
+			
+			switch field0 {
+			case exitCommandName:
 				oi.LongWriteString(writer, exitMessage)
 				return
+			case startImitateBrakeConnectCommand:
+				h.ImitateBrakeConnect = true
+			case stopImitateBrakeConnectCommand:
+				h.ImitateBrakeConnect = false
+
+			case startImitateInternalLongResponse:
+				h.ImitateInternalLongResponse = true
+			case stopImitateInternalLongResponse:
+				h.ImitateInternalLongResponse = false
+
+			case startImitateLongCommandResponses:
+				h.ImitateLongCommandResponses = true
+			case stopImitateLongCommandResponses:
+				h.ImitateLongCommandResponses = false
+			}
+
+			if h.ImitateBrakeConnect {
+				return
+			}
+
+			if h.ImitateInternalLongResponse {
+				time.Sleep(defaultLongInternalTimeout)
+			}
+
+			if h.ImitateLongCommandResponses {
+				time.Sleep(defaultShortInternalTimeout)
 			}
 
 			var producer Producer
@@ -310,7 +353,9 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 		}
 	}
 
-	oi.LongWriteString(writer, exitMessage)
+	if !h.ImitateBrakeConnect {
+		oi.LongWriteString(writer, exitMessage)
+	}
 	return
 }
 
