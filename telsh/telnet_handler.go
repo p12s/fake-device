@@ -204,13 +204,11 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 				} else {
 					// возможно понадобится читать кол-во попыток ввода логин/пасс
 					state = STATE_WAIT_LOGIN
-					if h.login == "" {
-						if _, err := oi.LongWrite(writer, []byte(defaultAskLogin)); nil != err {
-							logger.Errorf("Ask login writing prompt: %v", err)
-							return
-						}
-						logger.Debugf("Wrote ask login: %q.", []byte(defaultAskLogin))
+					if _, err := oi.LongWrite(writer, []byte(defaultAskLogin)); nil != err {
+						logger.Errorf("Ask login writing prompt: %v", err)
+						return
 					}
+					logger.Debugf("Wrote ask login: %q.", []byte(defaultAskLogin))
 				}
 				h.login = ""
 				h.password = ""
