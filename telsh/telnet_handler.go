@@ -30,7 +30,6 @@ const (
 
 	// troubles management commands
 	startImitateBrakeConnectCommand  = "startImitateBrakeConnect"
-	stopImitateBrakeConnectCommand   = "stopImitateBrakeConnect"
 	startImitateInternalLongResponse = "startImitateInternalLongResponse"
 	stopImitateInternalLongResponse  = "stopImitateInternalLongResponse"
 	startImitateLongCommandResponses = "startImitateLongCommandResponses"
@@ -60,7 +59,6 @@ type ShellHandler struct {
 	ExitMessage     string
 
 	// troubles imitation
-	ImitateBrakeConnect         bool
 	ImitateInternalLongResponse bool
 	ImitateLongCommandResponses bool
 
@@ -255,13 +253,9 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 			field0 := fields[0]
 
 			switch field0 {
-			case exitCommandName:
+			case exitCommandName, startImitateBrakeConnectCommand:
 				oi.LongWriteString(writer, exitMessage)
 				return
-			case startImitateBrakeConnectCommand:
-				h.ImitateBrakeConnect = true
-			case stopImitateBrakeConnectCommand:
-				h.ImitateBrakeConnect = false
 
 			case startImitateInternalLongResponse:
 				h.ImitateInternalLongResponse = true
@@ -272,10 +266,6 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 				h.ImitateLongCommandResponses = true
 			case stopImitateLongCommandResponses:
 				h.ImitateLongCommandResponses = false
-			}
-
-			if h.ImitateBrakeConnect {
-				return
 			}
 
 			if h.ImitateInternalLongResponse {
@@ -353,9 +343,7 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 		}
 	}
 
-	if !h.ImitateBrakeConnect {
-		oi.LongWriteString(writer, exitMessage)
-	}
+	oi.LongWriteString(writer, exitMessage)
 	return
 }
 
