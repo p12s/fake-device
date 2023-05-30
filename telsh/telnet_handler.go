@@ -20,6 +20,9 @@ const (
 	defaultLogin                = "admin"
 	defaultAskPassword          = "Password: "
 	defaultPassword             = "admin"
+	defaultFirmwareVersion      = "this is default firmware version:\n\nv0.0.1 2023.05.30"
+	defaultAskVersion           = "get"
+	defaultUpdateVersion        = "set"
 	defaultMaxRetry             = 3
 	defaultLongInternalTimeout  = 60 * time.Second
 	defaultShortInternalTimeout = 3 * time.Second
@@ -146,17 +149,13 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 	colonSpaceCommandNotFoundEL := []byte(": command not found :(\r\n")
 
 	var prompt bytes.Buffer
-	var exitCommandName string
-	var welcomeMessage string
-	var exitMessage string
-
 	prompt.WriteString(h.Prompt)
-
 	promptBytes := prompt.Bytes()
 
-	exitCommandName = h.ExitCommandName
-	welcomeMessage = h.WelcomeMessage
-	exitMessage = h.ExitMessage
+	exitCommandName := h.ExitCommandName
+	welcomeMessage := h.WelcomeMessage
+	exitMessage := h.ExitMessage
+	firmwareVersion := defaultFirmwareVersion
 
 	if _, err := oi.LongWriteString(writer, welcomeMessage); nil != err {
 		logger.Errorf("Problem long writing welcome message: %v", err)
@@ -255,6 +254,24 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 			case exitCommandName, startImitateBrakeConnect:
 				oi.LongWriteString(writer, exitMessage)
 				return
+
+			case defaultAskVersion:
+				if _, err := oi.LongWrite(writer, []byte(firmwareVersion)); nil != err {
+					return
+				}
+				line.Reset()
+				if _, err := oi.LongWrite(writer, promptBytes); nil != err {
+					return
+				}
+				continue
+
+			case defaultUpdateVersion:
+				firmwareVersion = strings.Join(fields[0:], " ")
+				line.Reset()
+				if _, err := oi.LongWrite(writer, promptBytes); nil != err {
+					return
+				}
+				continue
 
 			case startImitateInternalLongResponse:
 				time.Sleep(defaultLongInternalTimeout)
