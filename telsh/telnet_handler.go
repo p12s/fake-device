@@ -29,7 +29,7 @@ const (
 	stateCommandProcess = 30
 
 	// troubles management commands
-	startImitateBrakeConnectCommand  = "startImitateBrakeConnect"
+	startImitateBrakeConnect         = "startImitateBrakeConnect"
 	startImitateInternalLongResponse = "startImitateInternalLongResponse"
 	stopImitateInternalLongResponse  = "stopImitateInternalLongResponse"
 	startImitateLongCommandResponses = "startImitateLongCommandResponses"
@@ -253,7 +253,7 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 			field0 := fields[0]
 
 			switch field0 {
-			case exitCommandName, startImitateBrakeConnectCommand:
+			case exitCommandName, startImitateBrakeConnect:
 				oi.LongWriteString(writer, exitMessage)
 				return
 
