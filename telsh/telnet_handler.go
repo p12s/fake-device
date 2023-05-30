@@ -20,7 +20,7 @@ const (
 	defaultLogin                = "admin"
 	defaultAskPassword          = "Password: "
 	defaultPassword             = "admin"
-	defaultFirmwareVersion      = "this is default firmware version:\n\nv0.0.1 2023.05.30"
+	defaultFirmwareVersion      = "This is default firmware version:\nv0.0.1 2023.05.30"
 	defaultAskVersion           = "get"
 	defaultUpdateVersion        = "set"
 	defaultMaxRetry             = 3
@@ -256,7 +256,7 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 				return
 
 			case defaultAskVersion:
-				if _, err := oi.LongWrite(writer, []byte(firmwareVersion)); nil != err {
+				if _, err := oi.LongWrite(writer, []byte(firmwareVersion+"\n")); nil != err {
 					return
 				}
 				line.Reset()
@@ -266,7 +266,10 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 				continue
 
 			case defaultUpdateVersion:
-				firmwareVersion = strings.Join(fields[0:], " ")
+				if len(fields) <= 1 {
+					fields = append(fields, " ")
+				}
+				firmwareVersion = strings.Join(fields[1:], " ")
 				line.Reset()
 				if _, err := oi.LongWrite(writer, promptBytes); nil != err {
 					return
