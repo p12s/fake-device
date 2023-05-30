@@ -31,7 +31,6 @@ const (
 	// troubles management commands
 	startImitateBrakeConnect         = "startImitateBrakeConnect"
 	startImitateInternalLongResponse = "startImitateInternalLongResponse"
-	stopImitateInternalLongResponse  = "stopImitateInternalLongResponse"
 	startImitateLongCommandResponses = "startImitateLongCommandResponses"
 	stopImitateLongCommandResponses  = "stopImitateLongCommandResponses"
 )
@@ -258,18 +257,12 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 				return
 
 			case startImitateInternalLongResponse:
-				h.ImitateInternalLongResponse = true
-			case stopImitateInternalLongResponse:
-				h.ImitateInternalLongResponse = false
+				time.Sleep(defaultLongInternalTimeout)
 
 			case startImitateLongCommandResponses:
 				h.ImitateLongCommandResponses = true
 			case stopImitateLongCommandResponses:
 				h.ImitateLongCommandResponses = false
-			}
-
-			if h.ImitateInternalLongResponse {
-				time.Sleep(defaultLongInternalTimeout)
 			}
 
 			if h.ImitateLongCommandResponses {
