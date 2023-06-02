@@ -55,10 +55,12 @@ type ShellHandler struct {
 	elseProducer Producer
 
 	// settings
-	ExitCommandName string
-	Prompt          string
-	WelcomeMessage  string
-	ExitMessage     string
+	ExitCommandName    string
+	Prompt             string
+	WelcomeMessage     string
+	AskLoginMessage    string
+	AskPasswordMessage string
+	ExitMessage        string
 
 	// troubles imitation
 	ImitateInternalLongResponse bool
@@ -76,10 +78,12 @@ func NewShellHandler() *ShellHandler {
 	h := ShellHandler{
 		producers: producers,
 
-		Prompt:          defaultPrompt,
-		ExitCommandName: defaultExitCommandName,
-		WelcomeMessage:  defaultWelcomeMessage,
-		ExitMessage:     defaultExitMessage,
+		Prompt:             defaultPrompt,
+		ExitCommandName:    defaultExitCommandName,
+		WelcomeMessage:     defaultWelcomeMessage,
+		AskLoginMessage:    defaultAskLogin,
+		AskPasswordMessage: defaultAskPassword,
+		ExitMessage:        defaultExitMessage,
 		//connectMap:      make(map[int]auth),
 	}
 
@@ -165,11 +169,11 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 
 	// ask login
 	state := stateLogin
-	if _, err := oi.LongWrite(writer, []byte(defaultAskLogin)); nil != err {
+	if _, err := oi.LongWrite(writer, []byte(h.AskLoginMessage)); nil != err {
 		logger.Errorf("Ask login writing prompt: %v", err)
 		return
 	}
-	logger.Debugf("Wrote ask login: %q.", []byte(defaultAskLogin))
+	logger.Debugf("Wrote ask login: %q.", []byte(h.AskLoginMessage))
 
 	var buffer [1]byte // Seems like the length of the buffer needs to be small, otherwise will have to wait for buffer to fill up.
 	p := buffer[:]
@@ -197,11 +201,11 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 				line.Reset()
 				state = statePassword
 				// ask password
-				if _, err := oi.LongWrite(writer, []byte(defaultAskPassword)); nil != err {
+				if _, err := oi.LongWrite(writer, []byte(h.AskPasswordMessage)); nil != err {
 					logger.Errorf("Ask password writing prompt: %v", err)
 					return
 				}
-				logger.Debugf("Wrote ask password: %q.", []byte(defaultAskPassword))
+				logger.Debugf("Wrote ask password: %q.", []byte(h.AskPasswordMessage))
 				continue
 			case statePassword:
 				h.password = strings.TrimSpace(lineString)
@@ -216,11 +220,11 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 				} else {
 					// возможно понадобится читать кол-во попыток ввода логин/пасс
 					state = stateLogin
-					if _, err := oi.LongWrite(writer, []byte(defaultAskLogin)); nil != err {
+					if _, err := oi.LongWrite(writer, []byte(h.AskLoginMessage)); nil != err {
 						logger.Errorf("Ask login writing prompt: %v", err)
 						return
 					}
-					logger.Debugf("Wrote ask login: %q.", []byte(defaultAskLogin))
+					logger.Debugf("Wrote ask login: %q.", []byte(h.AskLoginMessage))
 				}
 				h.login = ""
 				h.password = ""
