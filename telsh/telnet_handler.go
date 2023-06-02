@@ -181,6 +181,11 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 	var line bytes.Buffer
 
 	for {
+		if h.retry >= defaultMaxRetry {
+			oi.LongWriteString(writer, exitMessage)
+			return
+		}
+
 		// Read 1 byte.
 		n, err := reader.Read(p)
 		if n <= 0 && nil == err {
