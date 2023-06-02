@@ -182,6 +182,7 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 
 	for {
 		if h.retry >= defaultMaxRetry {
+			h.retry = 0
 			oi.LongWriteString(writer, exitMessage)
 			return
 		}
