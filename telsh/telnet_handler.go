@@ -218,14 +218,15 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 				line.Reset()
 				if h.login == defaultLogin && h.password == defaultPassword {
 					state = stateCommandProcess
+					h.retry = 0
 					if _, err := oi.LongWrite(writer, promptBytes); nil != err {
 						logger.Errorf("Problem long writing prompt: %v", err)
 						return
 					}
 					logger.Debugf("Wrote prompt: %q.", promptBytes)
 				} else {
-					// возможно понадобится читать кол-во попыток ввода логин/пасс
 					state = stateLogin
+					h.retry += 1
 					if _, err := oi.LongWrite(writer, []byte(h.AskLoginMessage)); nil != err {
 						logger.Errorf("Ask login writing prompt: %v", err)
 						return
@@ -234,7 +235,6 @@ func (h *ShellHandler) ServeTELNET(ctx telnet.Context, writer telnet.Writer, rea
 				}
 				h.login = ""
 				h.password = ""
-				h.retry += 1
 				continue
 			}
 
