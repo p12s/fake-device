@@ -1,15 +1,14 @@
 package telnet
 
 import (
-	oi "github.com/reiver/go-oi"
-
 	"bufio"
 	"bytes"
 	"fmt"
 	"io"
 	"os"
-
 	"time"
+
+	oi "github.com/reiver/go-oi"
 )
 
 // StandardCaller is a simple TELNET client which sends to the server any data it gets from os.Stdin
@@ -20,13 +19,13 @@ var StandardCaller Caller = internalStandardCaller{}
 type internalStandardCaller struct{}
 
 func (caller internalStandardCaller) CallTELNET(ctx Context, w Writer, r Reader) {
-	standardCallerCallTELNET(os.Stdin, os.Stdout, os.Stderr, ctx, w, r)
+	StandardCallerCallTELNET(os.Stdin, os.Stdout, os.Stderr, ctx, w, r)
 }
 
-func standardCallerCallTELNET(stdin io.ReadCloser, stdout io.WriteCloser, stderr io.WriteCloser, ctx Context, w Writer, r Reader) {
-
+func StandardCallerCallTELNET(stdin io.ReadCloser, stdout io.WriteCloser, stderr io.WriteCloser,
+	ctx Context, w Writer, r Reader,
+) {
 	go func(writer io.Writer, reader io.Reader) {
-
 		var buffer [1]byte // Seems like the length of the buffer needs to be small, otherwise will have to wait for buffer to fill up.
 		p := buffer[:]
 
@@ -39,7 +38,7 @@ func standardCallerCallTELNET(stdin io.ReadCloser, stdout io.WriteCloser, stderr
 				break
 			}
 
-			oi.LongWrite(writer, p)
+			_, _ = oi.LongWrite(writer, p)
 		}
 	}(stdout, r)
 

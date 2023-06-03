@@ -1,0 +1,135 @@
+#  https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 1m
+  tests: true
+  build-tags: [ ]
+  skip-dirs: [ ]
+
+issues:
+  max-same-issues: 0
+#  exclude-rules:
+#    - path: (_test\.go|tests)
+#      linters:
+#        - bodyclose
+#        - dupl
+#        - funlen
+#        - goerr113
+#        - gosec
+#        - noctx
+#    - path: (internal/delivery/http)
+#      linters:
+#        - godot
+
+linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(gitlab.msk.vmet.ro/oss/autoconfigurators/wlc)
+    # Enable custom order of sections.
+    # If `true`, make the section order the same as the order of `sections`.
+    # Default: false
+    custom-order: true
+
+  godox:
+    keywords:
+      - TODO
+
+  lll:
+    # Max line length, lines longer will be reported.
+    # '\t' is counted as 1 character by default, and can be changed with the tab-width option.
+    # Default: 120.
+    line-length: 130
+    # Tab width in spaces.
+    # Default: 1
+    tab-width: 1
+
+  tagliatelle:
+    # Check the struct tag name case.
+    case:
+      # Use the struct field name to check the name of the struct tag.
+      # Default: false
+      use-field-name: false
+      # `camel` is used for `json` and `yaml`, and `header` is used for `header` (can be overridden)
+      # Default: {}
+      rules:
+        # Any struct tag type can be used.
+        # Support string case: `camel`, `pascal`, `kebab`, `snake`, `goCamel`, `goPascal`, `goKebab`, `goSnake`, `upper`, `lower`, `header`
+        #json: camel
+        toml: snake
+
+
+linters:
+  disable-all: true
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errname
+    - execinquery
+    - exhaustive
+    - exportloopref
+    - forbidigo
+    - gci
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
+    - gofmt
+    - gofumpt
+    - goheader
+    - goimports
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - importas
+    - ineffassign
+    - lll
+    - makezero
+    - misspell
+    - nakedret
+    - nestif
+    - nilnil
+    - nosprintfhostport
+    - prealloc
+    - predeclared
+    - promlinter
+    - reassign
+    - staticcheck
+    - tenv
+    - testableexamples
+    - testpackage
+    - thelper
+    - typecheck
+    - unconvert
+    - unused
+    - usestdlibvars
+    - whitespace
+    - loggercheck
+
+    #- depguard
+    #- stylecheck
+    #- tagliatelle
+    #- nolintlint
+    #- revive
+    #- musttag
+
+    # Broken due to https://github.com/golangci/golangci-lint/issues/3711
+    # - bodyclose
+    # - contextcheck
+    # - nilerr
+    # - noctx
+    # - rowserrcheck
+    # - sqlclosecheck
+    # - tparallel
+    # - unparam
+    # - wastedassign
+

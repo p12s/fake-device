@@ -11,7 +11,6 @@ var EchoHandler Handler = internalEchoHandler{}
 type internalEchoHandler struct{}
 
 func (handler internalEchoHandler) ServeTELNET(ctx Context, w Writer, r Reader) {
-
 	var buffer [1]byte // Seems like the length of the buffer needs to be small, otherwise will have to wait for buffer to fill up.
 	p := buffer[:]
 
@@ -19,7 +18,7 @@ func (handler internalEchoHandler) ServeTELNET(ctx Context, w Writer, r Reader) 
 		n, err := r.Read(p)
 
 		if n > 0 {
-			oi.LongWrite(w, p[:n])
+			_, _ = oi.LongWrite(w, p[:n])
 		}
 
 		if nil != err {

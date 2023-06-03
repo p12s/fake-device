@@ -1,16 +1,15 @@
-package telnet
+package telnet_test
 
 import (
-	oi "github.com/reiver/go-oi"
-
 	"bytes"
-	"io/ioutil"
-
+	"io"
 	"testing"
+
+	telnet "github.com/p12s/fake-device"
+	oi "github.com/reiver/go-oi"
 )
 
 func TestStandardCallerFromClientToServer(t *testing.T) {
-
 	tests := []struct {
 		Bytes    []byte
 		Expected []byte
@@ -176,12 +175,18 @@ func TestStandardCallerFromClientToServer(t *testing.T) {
 			Expected: []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, '\r', '\n'},
 		},
 		{
-			Bytes:    []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, '\n'},
-			Expected: []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, '\r', '\n'},
+			Bytes: []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, '\n'},
+			Expected: []byte{
+				255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+				255, '\r', '\n',
+			},
 		},
 		{
-			Bytes:    []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, '\n'},
-			Expected: []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, '\r', '\n'},
+			Bytes: []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, '\n'},
+			Expected: []byte{
+				255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+				255, 255, 255, '\r', '\n',
+			},
 		},
 
 		{
@@ -361,7 +366,8 @@ func TestStandardCallerFromClientToServer(t *testing.T) {
 			Expected: []byte{},
 		},
 		{
-			Bytes:    []byte{255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240}, // IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE
+			Bytes: []byte{255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240},
+			// IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE
 			Expected: []byte{},
 		},
 
@@ -370,7 +376,8 @@ func TestStandardCallerFromClientToServer(t *testing.T) {
 			Expected: []byte{255, 255, 250, 24, 1, 255, 255, 240, '\r', '\n'},
 		},
 		{
-			Bytes:    []byte{255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, '\n'}, // IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE '\n'
+			Bytes: []byte{255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, '\n'},
+			// IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE '\n'
 			Expected: []byte{255, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 255, 240, '\r', '\n'},
 		},
 
@@ -379,7 +386,8 @@ func TestStandardCallerFromClientToServer(t *testing.T) {
 			Expected: []byte{},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240}, // 'C' IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE
+			Bytes: []byte{67, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240},
+			// 'C' IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE
 			Expected: []byte{},
 		},
 
@@ -388,7 +396,8 @@ func TestStandardCallerFromClientToServer(t *testing.T) {
 			Expected: []byte{67, 255, 255, 250, 24, 1, 255, 255, 240, '\r', '\n'},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, '\n'}, // 'C' IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE '\n'
+			Bytes: []byte{67, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, '\n'},
+			// 'C' IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE '\n'
 			Expected: []byte{67, 255, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 255, 240, '\r', '\n'},
 		},
 
@@ -397,7 +406,8 @@ func TestStandardCallerFromClientToServer(t *testing.T) {
 			Expected: []byte{},
 		},
 		{
-			Bytes:    []byte{255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, 68}, // IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE 'D'
+			Bytes: []byte{255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, 68},
+			// IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE 'D'
 			Expected: []byte{},
 		},
 
@@ -406,7 +416,8 @@ func TestStandardCallerFromClientToServer(t *testing.T) {
 			Expected: []byte{255, 255, 250, 24, 1, 255, 255, 240, 68, '\r', '\n'},
 		},
 		{
-			Bytes:    []byte{255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, 68, '\n'}, // IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE 'D' '\n'
+			Bytes: []byte{255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, 68, '\n'},
+			// IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE 'D' '\n'
 			Expected: []byte{255, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 255, 240, 68, '\r', '\n'},
 		},
 
@@ -415,7 +426,8 @@ func TestStandardCallerFromClientToServer(t *testing.T) {
 			Expected: []byte{},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, 68}, // 'C' IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE 'D'
+			Bytes: []byte{67, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, 68},
+			// 'C' IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE 'D'
 			Expected: []byte{},
 		},
 
@@ -424,42 +436,63 @@ func TestStandardCallerFromClientToServer(t *testing.T) {
 			Expected: []byte{67, 255, 255, 250, 24, 1, 255, 255, 240, 68, '\r', '\n'},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, 68, '\n'}, // 'C' IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE 'D' '\n'
+			Bytes: []byte{67, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, 68, '\n'},
+			// 'C' IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE 'D' '\n'
 			Expected: []byte{67, 255, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 255, 240, 68, '\r', '\n'},
 		},
 
 		{
-			Bytes:    []byte{255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240}, // IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE
+			Bytes: []byte{255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240},
+			// IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE
 			Expected: []byte{255, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '\r', 10},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240}, // 'C' IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE
+			Bytes: []byte{67, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240},
+			// 'C' IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE
 			Expected: []byte{67, 255, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '\r', 10},
 		},
 		{
-			Bytes:    []byte{255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, 68}, // IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE 'D'
+			Bytes: []byte{255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, 68},
+			// IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE 'D'
 			Expected: []byte{255, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '\r', 10},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, 68}, // 'C' IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE 'D'
+			Bytes: []byte{67, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, 68},
+			// 'C' IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE 'D'
 			Expected: []byte{67, 255, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '\r', 10},
 		},
 
 		{
-			Bytes:    []byte{255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, '\n'}, // IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE '\n'
-			Expected: []byte{255, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '\r', 10, 11, 12, 13, 255, 255, 240, '\r', '\n'},
+			Bytes: []byte{255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, '\n'},
+			// IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE '\n'
+			Expected: []byte{
+				255, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '\r', 10, 11, 12, 13, 255, 255, 240,
+				'\r', '\n',
+			},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, '\n'}, // 'C' IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE '\n'
-			Expected: []byte{67, 255, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '\r', 10, 11, 12, 13, 255, 255, 240, '\r', '\n'},
+			Bytes: []byte{67, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, '\n'},
+			// 'C' IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE '\n'
+			Expected: []byte{
+				67, 255, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '\r', 10, 11, 12, 13, 255, 255, 240,
+				'\r', '\n',
+			},
 		},
 		{
-			Bytes:    []byte{255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, 68, '\n'}, // IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE 'D' '\n'
-			Expected: []byte{255, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '\r', 10, 11, 12, 13, 255, 255, 240, 68, '\r', '\n'},
+			Bytes: []byte{255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, 68, '\n'},
+			// IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE 'D' '\n'
+			Expected: []byte{
+				255, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '\r', 10, 11, 12, 13, 255, 255, 240, 68,
+				'\r', '\n',
+			},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, 68, '\n'}, // 'C' IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE 'D' '\n'
-			Expected: []byte{67, 255, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '\r', 10, 11, 12, 13, 255, 255, 240, 68, '\r', '\n'},
+			Bytes: []byte{67, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, 68, '\n'},
+			// 'C' IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE 'D' '\n'
+			Expected: []byte{
+				67, 255, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '\r', 10, 11, 12, 13, 255, 255, 240, 68,
+				'\r', '\n',
+			},
 		},
 	}
 
@@ -470,18 +503,19 @@ func TestStandardCallerFromClientToServer(t *testing.T) {
 
 		stdinBuffer.Write(test.Bytes) // <----------------- The important difference between the 2 loops.
 
-		stdin := ioutil.NopCloser(&stdinBuffer)
+		stdin := io.NopCloser(&stdinBuffer)
 		stdout := oi.WriteNopCloser(&stdoutBuffer)
 		stderr := oi.WriteNopCloser(&stderrBuffer)
 
-		var ctx Context = nil
+		var ctx telnet.Context = nil
 
 		var dataWriterBuffer bytes.Buffer
-		dataWriter := newDataWriter(&dataWriterBuffer)
+		dataWriter := telnet.NewDataWriter(&dataWriterBuffer)
 
-		dataReader := newDataReader(bytes.NewReader([]byte{})) // <----------------- The important difference between the 2 loops.
+		dataReader := telnet.NewDataReader(bytes.NewReader([]byte{}))
+		// <----------------- The important difference between the 2 loops.
 
-		standardCallerCallTELNET(stdin, stdout, stderr, ctx, dataWriter, dataReader)
+		telnet.StandardCallerCallTELNET(stdin, stdout, stderr, ctx, dataWriter, dataReader)
 
 		if expected, actual := string(test.Expected), dataWriterBuffer.String(); expected != actual {
 			t.Errorf("For test #%d, expected %q, but actually got %q; for %q.", testNumber, expected, actual, test.Bytes)
@@ -501,7 +535,6 @@ func TestStandardCallerFromClientToServer(t *testing.T) {
 }
 
 func TestStandardCallerFromServerToClient(t *testing.T) {
-
 	tests := []struct {
 		Bytes    []byte
 		Expected []byte
@@ -654,7 +687,8 @@ func TestStandardCallerFromServerToClient(t *testing.T) {
 			Expected: []byte{},
 		},
 		{
-			Bytes:    []byte{255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240}, // IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE
+			Bytes: []byte{255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240},
+			// IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE
 			Expected: []byte{},
 		},
 
@@ -663,7 +697,8 @@ func TestStandardCallerFromServerToClient(t *testing.T) {
 			Expected: []byte{67},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240}, // 'C' IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE
+			Bytes: []byte{67, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240},
+			// 'C' IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE
 			Expected: []byte{67},
 		},
 
@@ -672,7 +707,8 @@ func TestStandardCallerFromServerToClient(t *testing.T) {
 			Expected: []byte{68},
 		},
 		{
-			Bytes:    []byte{255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, 68}, // IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE 'D'
+			Bytes: []byte{255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, 68},
+			// IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE 'D'
 			Expected: []byte{68},
 		},
 
@@ -681,96 +717,121 @@ func TestStandardCallerFromServerToClient(t *testing.T) {
 			Expected: []byte{67, 68},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, 68}, // 'C' IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE 'D'
+			Bytes: []byte{67, 255, 250, 24, 0, 68, 69, 67, 45, 86, 84, 53, 50, 255, 240, 68},
+			// 'C' IAC SB TERMINAL-TYPE IS "DEC-VT52" IAC SE 'D'
 			Expected: []byte{67, 68},
 		},
 
 		{
-			Bytes:    []byte{255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240}, // IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE
+			Bytes: []byte{255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240},
+			// IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE
 			Expected: []byte{},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240}, // 'C' IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE
+			Bytes: []byte{67, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240},
+			// 'C' IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE
 			Expected: []byte{67},
 		},
 		{
-			Bytes:    []byte{255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, 68}, // IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE 'D'
+			Bytes: []byte{255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, 68},
+			// IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE 'D'
 			Expected: []byte{68},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, 68}, // 'C' IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE 'D'
+			Bytes: []byte{67, 255, 250, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 255, 240, 68},
+			// 'C' IAC SB 0 1 2 3 4 5 6 7 8 9 10 11 12 13 IAC SE 'D'
 			Expected: []byte{67, 68},
 		},
 
-		//@TODO: Is this correct? Can IAC appear between thee 'IAC SB' and ''IAC SE'?... and if "yes", do escaping rules apply?
+		// @TODO: Is this correct? Can IAC appear between thee 'IAC SB' and ''IAC SE'?... and if "yes",
+		// do escaping rules apply?
 		{
-			Bytes:    []byte{255, 250, 255, 255, 240, 255, 240}, //     IAC SB 255 255 240 IAC SE = IAC SB IAC IAC SE IAC SE
+			Bytes: []byte{255, 250, 255, 255, 240, 255, 240},
+			//     IAC SB 255 255 240 IAC SE = IAC SB IAC IAC SE IAC SE
 			Expected: []byte{},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 255, 255, 240, 255, 240}, // 'C' IAC SB 255 255 240 IAC SE = IAC SB IAC IAC SE IAC SE
+			Bytes: []byte{67, 255, 250, 255, 255, 240, 255, 240},
+			// 'C' IAC SB 255 255 240 IAC SE = IAC SB IAC IAC SE IAC SE
 			Expected: []byte{67},
 		},
 		{
-			Bytes:    []byte{255, 250, 255, 255, 240, 255, 240, 68}, //     IAC SB 255 255 240 IAC SE = IAC SB IAC IAC SE IAC SE 'D'
+			Bytes: []byte{255, 250, 255, 255, 240, 255, 240, 68},
+			//     IAC SB 255 255 240 IAC SE = IAC SB IAC IAC SE IAC SE 'D'
 			Expected: []byte{68},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 255, 255, 240, 255, 240, 68}, // 'C' IAC SB 255 255 240 IAC SE = IAC SB IAC IAC SE IAC SE 'D'
+			Bytes: []byte{67, 255, 250, 255, 255, 240, 255, 240, 68},
+			// 'C' IAC SB 255 255 240 IAC SE = IAC SB IAC IAC SE IAC SE 'D'
 			Expected: []byte{67, 68},
 		},
 
-		//@TODO: Is this correct? Can IAC appear between thee 'IAC SB' and ''IAC SE'?... and if "yes", do escaping rules apply?
+		// @TODO: Is this correct? Can IAC appear between thee 'IAC SB' and ''IAC SE'?... and if "yes",
+		// do escaping rules apply?
 		{
-			Bytes:    []byte{255, 250, 71, 255, 255, 240, 255, 240}, //     IAC SB 'G' 255 255 240 IAC SE = IAC SB 'G' IAC IAC SE IAC SE
+			Bytes: []byte{255, 250, 71, 255, 255, 240, 255, 240},
+			//     IAC SB 'G' 255 255 240 IAC SE = IAC SB 'G' IAC IAC SE IAC SE
 			Expected: []byte{},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 71, 255, 255, 240, 255, 240}, // 'C' IAC SB 'G' 255 255 240 IAC SE = IAC SB 'G' IAC IAC SE IAC SE
+			Bytes: []byte{67, 255, 250, 71, 255, 255, 240, 255, 240},
+			// 'C' IAC SB 'G' 255 255 240 IAC SE = IAC SB 'G' IAC IAC SE IAC SE
 			Expected: []byte{67},
 		},
 		{
-			Bytes:    []byte{255, 250, 71, 255, 255, 240, 255, 240, 68}, //     IAC SB 'G' 255 255 240 IAC SE = IAC SB 'G' IAC IAC SE IAC SE 'D'
+			Bytes: []byte{255, 250, 71, 255, 255, 240, 255, 240, 68},
+			//     IAC SB 'G' 255 255 240 IAC SE = IAC SB 'G' IAC IAC SE IAC SE 'D'
 			Expected: []byte{68},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 71, 255, 255, 240, 255, 240, 68}, // 'C' IAC SB 'G' 255 255 240 IAC SE = IAC 'G' SB IAC IAC SE IAC SE 'D'
+			Bytes: []byte{67, 255, 250, 71, 255, 255, 240, 255, 240, 68},
+			// 'C' IAC SB 'G' 255 255 240 IAC SE = IAC 'G' SB IAC IAC SE IAC SE 'D'
 			Expected: []byte{67, 68},
 		},
 
-		//@TODO: Is this correct? Can IAC appear between thee 'IAC SB' and ''IAC SE'?... and if "yes", do escaping rules apply?
+		// @TODO: Is this correct? Can IAC appear between thee 'IAC SB' and ''IAC SE'?... and if "yes",
+		// do escaping rules apply?
 		{
-			Bytes:    []byte{255, 250, 255, 255, 240, 72, 255, 240}, //     IAC SB 255 255 240 'H' IAC SE = IAC SB IAC IAC SE 'H' IAC SE
+			Bytes: []byte{255, 250, 255, 255, 240, 72, 255, 240},
+			//     IAC SB 255 255 240 'H' IAC SE = IAC SB IAC IAC SE 'H' IAC SE
 			Expected: []byte{},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 255, 255, 240, 72, 255, 240}, // 'C' IAC SB 255 255 240 'H' IAC SE = IAC SB IAC IAC SE 'H' IAC SE
+			Bytes: []byte{67, 255, 250, 255, 255, 240, 72, 255, 240},
+			// 'C' IAC SB 255 255 240 'H' IAC SE = IAC SB IAC IAC SE 'H' IAC SE
 			Expected: []byte{67},
 		},
 		{
-			Bytes:    []byte{255, 250, 255, 255, 240, 72, 255, 240, 68}, //     IAC SB 255 255 240 'H' IAC SE = IAC SB IAC IAC SE 'H' IAC SE 'D'
+			Bytes: []byte{255, 250, 255, 255, 240, 72, 255, 240, 68},
+			//     IAC SB 255 255 240 'H' IAC SE = IAC SB IAC IAC SE 'H' IAC SE 'D'
 			Expected: []byte{68},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 255, 255, 240, 72, 255, 240, 68}, // 'C' IAC SB 255 255 240 'H' IAC SE = IAC SB IAC IAC SE 'H' IAC SE 'D'
+			Bytes: []byte{67, 255, 250, 255, 255, 240, 72, 255, 240, 68},
+			// 'C' IAC SB 255 255 240 'H' IAC SE = IAC SB IAC IAC SE 'H' IAC SE 'D'
 			Expected: []byte{67, 68},
 		},
 
-		//@TODO: Is this correct? Can IAC appear between thee 'IAC SB' and ''IAC SE'?... and if "yes", do escaping rules apply?
+		// @TODO: Is this correct? Can IAC appear between thee 'IAC SB' and ''IAC SE'?... and if "yes",
+		// do escaping rules apply?
 		{
-			Bytes:    []byte{255, 250, 71, 255, 255, 240, 72, 255, 240}, //     IAC SB 'G' 255 255 240 'H' IAC SE = IAC SB 'G' IAC IAC SE 'H' IAC SE
+			Bytes: []byte{255, 250, 71, 255, 255, 240, 72, 255, 240},
+			//     IAC SB 'G' 255 255 240 'H' IAC SE = IAC SB 'G' IAC IAC SE 'H' IAC SE
 			Expected: []byte{},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 71, 255, 255, 240, 72, 255, 240}, // 'C' IAC SB 'G' 255 255 240 'H' IAC SE = IAC SB 'G' IAC IAC SE 'H' IAC SE
+			Bytes: []byte{67, 255, 250, 71, 255, 255, 240, 72, 255, 240},
+			// 'C' IAC SB 'G' 255 255 240 'H' IAC SE = IAC SB 'G' IAC IAC SE 'H' IAC SE
 			Expected: []byte{67},
 		},
 		{
-			Bytes:    []byte{255, 250, 71, 255, 255, 240, 72, 255, 240, 68}, //     IAC SB 'G' 255 255 240 'H' IAC SE = IAC SB 'G' IAC IAC SE 'H' IAC SE 'D'
+			Bytes: []byte{255, 250, 71, 255, 255, 240, 72, 255, 240, 68},
+			//     IAC SB 'G' 255 255 240 'H' IAC SE = IAC SB 'G' IAC IAC SE 'H' IAC SE 'D'
 			Expected: []byte{68},
 		},
 		{
-			Bytes:    []byte{67, 255, 250, 71, 255, 255, 240, 72, 255, 240, 68}, // 'C' IAC SB 'G' 255 255 240 'H' IAC SE = IAC 'G' SB IAC IAC SE 'H' IAC SE 'D'
+			Bytes: []byte{67, 255, 250, 71, 255, 255, 240, 72, 255, 240, 68},
+			// 'C' IAC SB 'G' 255 255 240 'H' IAC SE = IAC 'G' SB IAC IAC SE 'H' IAC SE 'D'
 			Expected: []byte{67, 68},
 		},
 	}
@@ -780,18 +841,19 @@ func TestStandardCallerFromServerToClient(t *testing.T) {
 		var stdoutBuffer bytes.Buffer
 		var stderrBuffer bytes.Buffer
 
-		stdin := ioutil.NopCloser(&stdinBuffer)
+		stdin := io.NopCloser(&stdinBuffer)
 		stdout := oi.WriteNopCloser(&stdoutBuffer)
 		stderr := oi.WriteNopCloser(&stderrBuffer)
 
-		var ctx Context = nil
+		var ctx telnet.Context = nil
 
 		var dataWriterBuffer bytes.Buffer
-		dataWriter := newDataWriter(&dataWriterBuffer)
+		dataWriter := telnet.NewDataWriter(&dataWriterBuffer)
 
-		dataReader := newDataReader(bytes.NewReader(test.Bytes)) // <----------------- The important difference between the 2 loops.
+		dataReader := telnet.NewDataReader(bytes.NewReader(test.Bytes))
+		// <----------------- The important difference between the 2 loops.
 
-		standardCallerCallTELNET(stdin, stdout, stderr, ctx, dataWriter, dataReader)
+		telnet.StandardCallerCallTELNET(stdin, stdout, stderr, ctx, dataWriter, dataReader)
 
 		if expected, actual := "", dataWriterBuffer.String(); expected != actual {
 			t.Errorf("For test #%d, expected %q, but actually got %q; for %q.", testNumber, expected, actual, test.Bytes)
@@ -807,6 +869,5 @@ func TestStandardCallerFromServerToClient(t *testing.T) {
 			t.Errorf("For test #%d, expected %q, but actually got %q.", testNumber, expected, actual)
 			continue
 		}
-
 	}
 }

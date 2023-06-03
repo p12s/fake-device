@@ -1,17 +1,19 @@
 package telnet
 
 import (
-	oi "github.com/reiver/go-oi"
-
 	"bytes"
 	"errors"
 	"io"
+
+	oi "github.com/reiver/go-oi"
 )
 
 var iaciac []byte = []byte{255, 255}
 
-var errOverflow = errors.New("Overflow")
-var errPartialIACIACWrite = errors.New("Partial IAC IAC write.")
+var (
+	errOverflow           = errors.New("Overflow")
+	errPartialIACIACWrite = errors.New("Partial IAC IAC write.")
+)
 
 // An internalDataWriter deals with "escaping" according to the TELNET (and TELNETS) protocol.
 //
@@ -21,7 +23,7 @@ var errPartialIACIACWrite = errors.New("Partial IAC IAC write.")
 //
 // The TELNET (and TELNETS) protocol also has a distinction between 'data' and 'commands'.
 //
-// (DataWriter is targetted toward TELNET (and TELNETS) 'data', not TELNET (and TELNETS) 'commands'.)
+// (DataWriter is targeted toward TELNET (and TELNETS) 'data', not TELNET (and TELNETS) 'commands'.)
 //
 // If a byte with value 255 (=IAC) appears in the data, then it must be escaped.
 //
@@ -46,7 +48,7 @@ type internalDataWriter struct {
 	wrapped io.Writer
 }
 
-// newDataWriter creates a new internalDataWriter writing to 'w'.
+// NewDataWriter creates a new internalDataWriter writing to 'w'.
 //
 // 'w' receives what is written to the *internalDataWriter but escaped according to
 // the TELNET (and TELNETS) protocol.
@@ -64,7 +66,7 @@ type internalDataWriter struct {
 // (Notice that each "255" in the original byte array became 2 "255"s in a row.)
 //
 // *internalDataWriter takes care of all this for you, so you do not have to do it.
-func newDataWriter(w io.Writer) *internalDataWriter {
+func NewDataWriter(w io.Writer) *internalDataWriter {
 	writer := internalDataWriter{
 		wrapped: w,
 	}
@@ -86,8 +88,7 @@ func (w *internalDataWriter) Write(data []byte) (n int, err error) {
 }
 
 func (w *internalDataWriter) write64(data []byte) (n int64, err error) {
-
-	if len(data) <= 0 {
+	if len(data) == 0 {
 		return 0, nil
 	}
 
@@ -95,9 +96,7 @@ func (w *internalDataWriter) write64(data []byte) (n int64, err error) {
 
 	var buffer bytes.Buffer
 	for _, datum := range data {
-
-		if IAC == datum {
-
+		if IAC == datum { // nolint:nestif
 			if buffer.Len() > 0 {
 				var numWritten int64
 
@@ -110,10 +109,10 @@ func (w *internalDataWriter) write64(data []byte) (n int64, err error) {
 			}
 
 			var numWritten int64
-			//@TODO: Should we worry about "iaciac" potentially being modified by the .Write()?
+			// @TODO: Should we worry about "iaciac" potentially being modified by the .Write()?
 			numWritten, err = oi.LongWrite(w.wrapped, iaciac)
 			if int64(len(iaciac)) != numWritten {
-				//@TODO: Do we really want to panic() here?
+				// @TODO: Do we really want to panic() here?
 				panic(errPartialIACIACWrite)
 			}
 			n += 1

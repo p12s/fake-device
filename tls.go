@@ -43,7 +43,6 @@ func ListenAndServeTLS(addr string, certFile string, keyFile string, handler Han
 // From a TELNET protocol point-of-view, it allows for 'secured telnet', also known as TELNETS,
 // which by default listens to port 992.
 func (server *Server) ListenAndServeTLS(certFile string, keyFile string) error {
-
 	addr := server.Addr
 	if "" == addr {
 		addr = ":telnets"
@@ -62,28 +61,27 @@ func (server *Server) ListenAndServeTLS(certFile string, keyFile string) error {
 	// tls.Config?)
 	var tlsConfig *tls.Config = nil
 	if nil == server.TLSConfig {
-		tlsConfig = &tls.Config{}
+		tlsConfig = &tls.Config{
+			Time: server.TLSConfig.Time,
+		}
 	} else {
 		tlsConfig = &tls.Config{
-			Rand:                     server.TLSConfig.Rand,
-			Time:                     server.TLSConfig.Time,
-			Certificates:             server.TLSConfig.Certificates,
-			NameToCertificate:        server.TLSConfig.NameToCertificate,
-			GetCertificate:           server.TLSConfig.GetCertificate,
-			RootCAs:                  server.TLSConfig.RootCAs,
-			NextProtos:               server.TLSConfig.NextProtos,
-			ServerName:               server.TLSConfig.ServerName,
-			ClientAuth:               server.TLSConfig.ClientAuth,
-			ClientCAs:                server.TLSConfig.ClientCAs,
-			InsecureSkipVerify:       server.TLSConfig.InsecureSkipVerify,
-			CipherSuites:             server.TLSConfig.CipherSuites,
-			PreferServerCipherSuites: server.TLSConfig.PreferServerCipherSuites,
-			SessionTicketsDisabled:   server.TLSConfig.SessionTicketsDisabled,
-			SessionTicketKey:         server.TLSConfig.SessionTicketKey,
-			ClientSessionCache:       server.TLSConfig.ClientSessionCache,
-			MinVersion:               server.TLSConfig.MinVersion,
-			MaxVersion:               server.TLSConfig.MaxVersion,
-			CurvePreferences:         server.TLSConfig.CurvePreferences,
+			Rand:                   server.TLSConfig.Rand,
+			Time:                   server.TLSConfig.Time,
+			Certificates:           server.TLSConfig.Certificates,
+			GetCertificate:         server.TLSConfig.GetCertificate,
+			RootCAs:                server.TLSConfig.RootCAs,
+			NextProtos:             server.TLSConfig.NextProtos,
+			ServerName:             server.TLSConfig.ServerName,
+			ClientAuth:             server.TLSConfig.ClientAuth,
+			ClientCAs:              server.TLSConfig.ClientCAs,
+			InsecureSkipVerify:     server.TLSConfig.InsecureSkipVerify,
+			CipherSuites:           server.TLSConfig.CipherSuites,
+			SessionTicketsDisabled: server.TLSConfig.SessionTicketsDisabled,
+			ClientSessionCache:     server.TLSConfig.ClientSessionCache,
+			MinVersion:             server.TLSConfig.MinVersion,
+			MaxVersion:             server.TLSConfig.MaxVersion,
+			CurvePreferences:       server.TLSConfig.CurvePreferences,
 		}
 	}
 

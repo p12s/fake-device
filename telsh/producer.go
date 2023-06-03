@@ -23,7 +23,7 @@ type Producer interface {
 //
 //	func(telnet.Context, string, ...string) Handler
 //
-// Into a Producer
+// Into a Producer.
 type ProducerFunc func(telnet.Context, string, ...string) Handler
 
 // Produce makes ProducerFunc fit the Producer interface.

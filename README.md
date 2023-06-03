@@ -1,3 +1,9 @@
+![License](https://img.shields.io/github/license/p12s/fake-device)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/p12s/fake-device?style=plastic)
+[![Codecov](https://codecov.io/gh/p12s/ifake-device/branch/main/graph/badge.svg?token=0VP8CWJB7A)](https://codecov.io/gh/p12s/fake-device)
+[![Go Report Card](https://goreportcard.com/badge/github.com/p12s/fake-device)](https://goreportcard.com/report/github.com/p12s/fake-device)
+<img src="https://github.com/p12s/fake-device/workflows/lint-build-test/badge.svg?branch=main">
+
 # fake-device
 Copy of repo https://github.com/reiver/go-telnet  
   

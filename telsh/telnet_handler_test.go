@@ -1,14 +1,13 @@
-package telsh
+package telsh_test
 
 import (
 	"bytes"
 	"strings"
-
 	"testing"
+
 )
 
 func TestServeTELNETCommandNotFound(t *testing.T) {
-
 	tests := []struct {
 		ClientSends string
 		Expected    string
@@ -17,7 +16,6 @@ func TestServeTELNETCommandNotFound(t *testing.T) {
 			ClientSends: "\r\n",
 			Expected:    "",
 		},
-
 		{
 			ClientSends: "apple\r\n",
 			Expected:    "apple: command not found :(\r\n",
@@ -73,10 +71,10 @@ func TestServeTELNETCommandNotFound(t *testing.T) {
 	}
 
 	for testNumber, test := range tests {
-
-		shellHandler := NewShellHandler()
-		if nil == shellHandler {
-			t.Errorf("For test #%d, did not expect to get nil, but actually got it: %v; for client sent: %q", testNumber, shellHandler, test.ClientSends)
+		h := telsh.NewShellHandler()
+		if nil == h {
+			t.Errorf("For test #%d, did not expect to get nil, but actually got it: %v; for client sent: %q",
+				testNumber, h, test.ClientSends)
 			continue
 		}
 
@@ -84,10 +82,11 @@ func TestServeTELNETCommandNotFound(t *testing.T) {
 
 		var buffer bytes.Buffer
 
-		shellHandler.ServeTELNET(ctx, &buffer, strings.NewReader(test.ClientSends))
+		h.ServeTELNET(ctx, &buffer, strings.NewReader(test.ClientSends))
 
-		if expected, actual := shellHandler.WelcomeMessage+shellHandler.Prompt+test.Expected+shellHandler.Prompt+shellHandler.ExitMessage, buffer.String(); expected != actual {
-			t.Errorf("For test #%d, expect %q, but actually got %q; for client sent: %q", testNumber, expected, actual, test.ClientSends)
+		if expected, actual := h.WelcomeMessage+h.Prompt+test.Expected+h.Prompt+h.ExitMessage, buffer.String(); expected != actual {
+			t.Errorf("For test #%d, expect %q, but actually got %q; for client sent: %q",
+				testNumber, expected, actual, test.ClientSends)
 			continue
 		}
 	}

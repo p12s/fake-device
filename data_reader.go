@@ -1,17 +1,12 @@
 package telnet
 
-
 import (
 	"bufio"
 	"errors"
 	"io"
 )
 
-
-var (
-	errCorrupted = errors.New("Corrupted")
-)
-
+var errCorrupted = errors.New("Corrupted")
 
 // An internalDataReader deals with "un-escaping" according to the TELNET protocol.
 //
@@ -21,7 +16,7 @@ var (
 //
 // The TELNET protocol also has a distinction between 'data' and 'commands'.
 //
-//(DataReader is targetted toward TELNET 'data', not TELNET 'commands'.)
+// (DataReader is targeted toward TELNET 'data', not TELNET 'commands'.)
 //
 // If a byte with value 255 (=IAC) appears in the data, then it must be escaped.
 //
@@ -57,26 +52,23 @@ var (
 //	[]byte{1, 55, 2, 155, 3, 255, 4, 40, 255, 30, 20}
 type internalDataReader struct {
 	wrapped  io.Reader
-	buffered  *bufio.Reader
+	buffered *bufio.Reader
 }
 
-
 // newDataReader creates a new DataReader reading from 'r'.
-func newDataReader(r io.Reader) *internalDataReader {
+func NewDataReader(r io.Reader) *internalDataReader {
 	buffered := bufio.NewReader(r)
 
 	reader := internalDataReader{
-		wrapped:r,
-		buffered:buffered,
+		wrapped:  r,
+		buffered: buffered,
 	}
 
 	return &reader
 }
 
-
 // Read reads the TELNET escaped data from the  wrapped io.Reader, and "un-escapes" it into 'data'.
 func (r *internalDataReader) Read(data []byte) (n int, err error) {
-
 	const IAC = 255
 
 	const SB = 250
@@ -84,7 +76,7 @@ func (r *internalDataReader) Read(data []byte) (n int, err error) {
 
 	const WILL = 251
 	const WONT = 252
-	const DO   = 253
+	const DO = 253
 	const DONT = 254
 
 	p := data
@@ -97,7 +89,7 @@ func (r *internalDataReader) Read(data []byte) (n int, err error) {
 			return n, err
 		}
 
-		if IAC == b {
+		if IAC == b { // nolint:nestif
 			var peeked []byte
 
 			peeked, err = r.buffered.Peek(1)
@@ -157,12 +149,11 @@ func (r *internalDataReader) Read(data []byte) (n int, err error) {
 				}
 			default:
 				// If we get in here, this is not following the TELNET protocol.
-//@TODO: Make a better error.
+				// @TODO: Make a better error.
 				err = errCorrupted
 				return n, err
 			}
 		} else {
-
 			p[0] = b
 			n++
 			p = p[1:]

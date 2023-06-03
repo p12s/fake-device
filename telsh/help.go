@@ -1,10 +1,9 @@
 package telsh
 
 import (
-	telnet "github.com/p12s/fake-device"
-	oi "github.com/reiver/go-oi"
 	"io"
 	"sort"
+
 )
 
 type internalHelpProducer struct {
@@ -64,10 +63,10 @@ func (handler *internalHelpHandler) Run() error {
 		return handler.err
 	}
 
-	//@TODO: Should this be reaching inside of ShellHandler? Maybe there should be ShellHandler public methods instead.
+	// @TODO: Should this be reaching inside of ShellHandler? Maybe there should be ShellHandler public methods instead.
 	keys := make([]string, 1+len(handler.helpProducer.shellHandler.producers))
 	i := 0
-	for key, _ := range handler.helpProducer.shellHandler.producers {
+	for key := range handler.helpProducer.shellHandler.producers {
 		keys[i] = key
 		i++
 	}
